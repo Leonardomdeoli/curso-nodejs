@@ -1,15 +1,53 @@
 module.exports = function (app) {
     app.get('/produtos', function (req, res) {
-        
         var connection = app.infra.connectionFactory();
+        var produtosDAO = new app.infra.ProdutosDAO(connection);
 
-        connection.query('select * from livros', function (err, results) {
-            if (err) throw err;
-            res.render('produtos/lista', {
-                lista: results
+        produtosDAO.lista(function (err, results) {
+            res.format({
+                html: function () {
+                    res.render('produtos/lista', {lista:results});
+                },
+                json: function () {
+                    res.json(results);
+                }
             });
         });
 
         connection.end();
     });
+
+    app.get('/produtos/form', function (req, res) {
+        res.render('produtos/form',{erros:undefined});
+    });
+
+    app.post('/produtos', function (req, res) {
+        var produto = req.body;
+
+        req.assert('titulo', 'O Titulo é obrigátorio').notEmpty();
+        req.assert('preco', 'O preço é obrigátorio').isFloat();
+        req.assert('descricao', 'A descricao é obrigátorio').notEmpty();
+
+        var erros = req.validationErrors();
+        if(erros){
+            res.status(400).format({
+                html: function () {
+                    res.render('produtos/form', {erros:erros, produto:produto});
+                },
+                json: function () {
+                    res.json(erros);
+                }
+            });
+            return;
+        }
+
+        var connection = app.infra.connectionFactory();
+        var produtosDAO = new app.infra.ProdutosDAO(connection);
+
+        produtosDAO.salva(produto, function (erros, results) {
+            res.redirect('/produtos');
+        });
+    });
 }
+
+
