@@ -6,7 +6,9 @@ module.exports = function (app) {
         produtosDAO.lista(function (err, results) {
             res.format({
                 html: function () {
-                    res.render('produtos/lista', {lista:results});
+                    res.render('produtos/lista', {
+                        lista: results
+                    });
                 },
                 json: function () {
                     res.json(results);
@@ -18,7 +20,19 @@ module.exports = function (app) {
     });
 
     app.get('/produtos/form', function (req, res) {
-        res.render('produtos/form',{erros:undefined});
+        res.render('produtos/form', {
+            erros: undefined
+        });
+    });
+
+
+    app.delete('/produtos', (req, res) => {
+        var connection = app.infra.connectionFactory();
+        var produtosDAO = new app.infra.ProdutosDAO(connection);
+        var produto = req.body;
+        produtosDAO.delete(produto, function (error, results) {
+            res.redirect('/produtos');
+        });
     });
 
     app.post('/produtos', function (req, res) {
@@ -29,10 +43,13 @@ module.exports = function (app) {
         req.assert('descricao', 'A descricao é obrigátorio').notEmpty();
 
         var erros = req.validationErrors();
-        if(erros){
+        if (erros) {
             res.status(400).format({
                 html: function () {
-                    res.render('produtos/form', {erros:erros, produto:produto});
+                    res.render('produtos/form', {
+                        erros: erros,
+                        produto: produto
+                    });
                 },
                 json: function () {
                     res.json(erros);
@@ -43,11 +60,16 @@ module.exports = function (app) {
 
         var connection = app.infra.connectionFactory();
         var produtosDAO = new app.infra.ProdutosDAO(connection);
-
-        produtosDAO.salva(produto, function (erros, results) {
-            res.redirect('/produtos');
-        });
+        
+        if (produto.id) {
+            var array = [produto.titulo, produto.descricao, produto.preco, produto.id];
+            produtosDAO.update(array, function (error, results, fields) {
+                res.redirect('/produtos');
+            });
+        } else {
+            produtosDAO.salva(produto, function (erros, results) {
+                res.redirect('/produtos');
+            });
+        }
     });
 }
-
-

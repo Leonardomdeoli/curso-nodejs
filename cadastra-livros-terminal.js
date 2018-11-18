@@ -19,7 +19,8 @@ var cliente = http.request(configuracao, function (res) {
 });
 
 var produto = {
-    titulo:'',
+    id:1,
+    titulo:'Comecando com Java',
     descricao:'node, javascript e um pouco sobre http',
     preco:100
 };
